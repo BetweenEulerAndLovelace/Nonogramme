@@ -1,13 +1,69 @@
 class Grille {
-  int taille;
+  int tailleGrille;
   ArrayList<LinkedList<Integer>> contraintesV;
   ArrayList<LinkedList<Integer>> contraintesH;
   ArrayList<BoutonAjouterContrainte> ajouterContrainteV = new ArrayList<BoutonAjouterContrainte>(10);
   ArrayList<BoutonAjouterContrainte> ajouterContrainteH = new ArrayList<BoutonAjouterContrainte>(10);
   ArrayList<LinkedList<BoutonReglageContrainte>> reglerContraintesV = new ArrayList<LinkedList<BoutonReglageContrainte>>(10);
   ArrayList<LinkedList<BoutonReglageContrainte>> reglerContraintesH = new ArrayList<LinkedList<BoutonReglageContrainte>>(10);
+  BoutonRect phase0finie = new BoutonRect(new PVector(debutGrille-2*largeurCase, debutGrille-3*largeurCase), new PVector(largeurCase*2, largeurCase), vertFonce, vert, "+/-") {
+    void appuyer() {
+      phase=1;
+      initPhase1();
+      
+    }
+    void moletteHaut() {
+      tg+=1;
+      tailleGrille+=1;
+      contraintesV = new ArrayList<LinkedList<Integer>>(tg);
+      contraintesH = new ArrayList<LinkedList<Integer>>(tg);
+      for (int i=0; i<tg; i++) {
+        contraintesV.add(new LinkedList<Integer>());
+        contraintesH.add(new LinkedList<Integer>());
+      }
+    }
+    void moletteBas() {
+      if (tg>1) {
+        tg-=1;
+        tailleGrille-=1;
+        contraintesV = new ArrayList<LinkedList<Integer>>(tg);
+        contraintesH = new ArrayList<LinkedList<Integer>>(tg);
+        for (int i=0; i<tg; i++) {
+          contraintesV.add(new LinkedList<Integer>());
+          contraintesH.add(new LinkedList<Integer>());
+        }
+      }
+    }
+  };
+  BoutonRect phase1finie = new BoutonRect(new PVector(debutGrille-2*largeurCase, debutGrille-2*largeurCase), new PVector(largeurCase*2, largeurCase), vertFonce, vert, "Contraintes") {
+    void appuyer() {
+      phase=2;
+      ajouterContrainteV.clear();
+      ajouterContrainteH.clear();
+      reglerContraintesV.clear();
+      reglerContraintesH.clear();
+      resoudreDirect();
+    }
+    void moletteHaut() {}
+    void moletteBas() {}
+  };
+  BoutonRect phase2avant = new BoutonRect(new PVector(debutGrille-2*largeurCase, debutGrille-largeurCase), new PVector(largeurCase, largeurCase), vertFonce, vert, "<") {
+    void appuyer() {
+      // TODO
+    }
+    void moletteHaut() {}
+    void moletteBas() {}
+  };
+  BoutonRect phase2apres = new BoutonRect(new PVector(debutGrille-largeurCase, debutGrille-largeurCase), new PVector(largeurCase, largeurCase), vertFonce, vert, ">") {
+    void appuyer() {
+      // TODO
+    }
+    void moletteHaut() {}
+    void moletteBas() {}
+  };
+  ArrayList<ArrayList<Case>> plateau;
   Grille(int n) {
-    taille = n;
+    tailleGrille = n;
     contraintesV = new ArrayList<LinkedList<Integer>>(n);
     contraintesH = new ArrayList<LinkedList<Integer>>(n);
     for (int i=0; i<n; i++) {
@@ -17,18 +73,28 @@ class Grille {
   }
   void afficherGrille() {
     noFill();
-    for (int i=0; i<taille; i++) {
-      for (int j=0; j<taille; j++) {
+    for (int i=0; i<tailleGrille; i++) {
+      for (int j=0; j<tailleGrille; j++) {
         rect(debutGrille+i*largeurCase, debutGrille+j*largeurCase, largeurCase, largeurCase);
       }
     }
     strokeWeight(3);
-    for (int i=0; i+5<=taille; i+=5) {
-      for (int j=0; j+5<=taille; j+=5) {
+    for (int i=0; i+5<=tailleGrille; i+=5) {
+      for (int j=0; j+5<=tailleGrille; j+=5) {
         rect(debutGrille+i*largeurCase, debutGrille+j*largeurCase, 5*largeurCase, 5*largeurCase);
       }
     }
     strokeWeight(1);
+    fill(gris);
+    rect(debutGrille-largeurCase*2, debutGrille-3*largeurCase, largeurCase*2, largeurCase);
+    rect(debutGrille-largeurCase*2, debutGrille-2*largeurCase, largeurCase*2, largeurCase);
+    rect(debutGrille-largeurCase*2, debutGrille-largeurCase, largeurCase, largeurCase);
+    rect(debutGrille-largeurCase, debutGrille-largeurCase, largeurCase, largeurCase);
+    fill(noir);
+    text("+/-", debutGrille-largeurCase, debutGrille-3*largeurCase+largeurCase/2);
+    text("Contraintes", debutGrille-largeurCase, debutGrille-2*largeurCase+largeurCase/2);
+    text("<", debutGrille-2*largeurCase+largeurCase/2, debutGrille-largeurCase+largeurCase/2);
+    text(">", debutGrille-largeurCase/2, debutGrille-largeurCase+largeurCase/2);
     for (BoutonAjouterContrainte b : ajouterContrainteV)
       b.afficher();
     for (BoutonAjouterContrainte b : ajouterContrainteH)
@@ -39,7 +105,24 @@ class Grille {
     for (LinkedList<BoutonReglageContrainte> ll : reglerContraintesH)
       for (BoutonReglageContrainte b : ll)
         b.afficher();
-    
+    if (phase==0) {
+      phase0finie.afficher();
+    } else if (phase==1) {
+      phase1finie.afficher();
+    } else {
+      phase2avant.afficher();
+      phase2apres.afficher();
+    }
+    if (phase==2) { // Affichage des contraintes en phase 2
+      for (int i=0; i<tg; i++) {
+        for (int j=0; j<contraintesV.get(i).size(); j++) {
+          text(contraintesV.get(i).get(j), debutGrille+i*largeurCase+largeurCase/2, debutGrille-contraintesV.get(i).size()*largeurCase+j*largeurCase+largeurCase/2);
+        }
+        for (int j=0; j<contraintesH.get(i).size(); j++) {
+          text(contraintesH.get(i).get(j), debutGrille-contraintesH.get(i).size()*largeurCase+j*largeurCase+largeurCase/2, debutGrille+i*largeurCase+largeurCase/2);
+        }
+      }
+    }
   }
   void appuyer() {
     for (BoutonAjouterContrainte b : ajouterContrainteV)
@@ -56,6 +139,15 @@ class Grille {
       for (BoutonReglageContrainte b : ll)
         if (b.estSurvole())
           b.appuyer();
+    if (phase==0 && phase0finie.estSurvole()) {
+      phase0finie.appuyer();
+    } else if (phase==1 && phase1finie.estSurvole()) {
+      phase1finie.appuyer();
+    } else if (phase==2 && phase2avant.estSurvole()) {
+      phase2avant.appuyer();
+    } else if (phase==2 && phase2apres.estSurvole()) {
+      phase2apres.appuyer();
+    }
   }
   void moletteHaut() {
     for (BoutonAjouterContrainte b : ajouterContrainteV)
@@ -79,6 +171,15 @@ class Grille {
         if (b.estSurvole())
           b.moletteHaut();
       }
+    }
+    if (phase==0 && phase0finie.estSurvole()) {
+      phase0finie.moletteHaut();
+    } else if (phase==1 && phase1finie.estSurvole()) {
+      phase1finie.moletteHaut();
+    } else if (phase==2 && phase2avant.estSurvole()) {
+      phase2avant.moletteHaut();
+    } else if (phase==2 && phase2apres.estSurvole()) {
+      phase2apres.moletteHaut();
     }
   }
   void moletteBas() {
@@ -104,6 +205,15 @@ class Grille {
           b.moletteBas();
       }
     }
+    if (phase==0 && phase0finie.estSurvole()) {
+      phase0finie.moletteBas();
+    } else if (phase==1 && phase1finie.estSurvole()) {
+      phase1finie.moletteBas();
+    } else if (phase==2 && phase2avant.estSurvole()) {
+      phase2avant.moletteBas();
+    } else if (phase==2 && phase2apres.estSurvole()) {
+      phase2apres.moletteBas();
+    }
   }
   void initPhase1() {
     for (int i=0; i<tg; i++) {
@@ -124,6 +234,12 @@ class Grille {
       });
       reglerContraintesH.add(new LinkedList<BoutonReglageContrainte>());
     }
+  }
+  void initPhase2() {
+    ajouterContrainteV.clear();
+    ajouterContrainteH.clear();
+    reglerContraintesV.clear();
+    reglerContraintesH.clear();
   }
   void ajouterContrainte(int x, int rang, boolean v) {
     if (v) {
@@ -207,5 +323,78 @@ class Grille {
         }
       }
     }
+  }
+  
+  // Résolution
+  ArrayList<ArrayList<ArrayList<Case>>> resoudreDirect() {
+    ArrayList<ArrayList<ArrayList<Case>>> res = new ArrayList<ArrayList<ArrayList<Case>>>();
+    ArrayList<ArrayList<Case>> certains = new ArrayList<ArrayList<Case>>(tg);
+    for (int i=0; i<tg; i++) {
+      ArrayList<Case> l = new ArrayList<Case>(tg);
+      for (int j=0; j<tg; j++)
+        l.add(Case.LIBRE);
+      certains.add(l);
+    }
+    for (int i=0; i<tg; i++) { // Colonne par colonne
+      int s=0;
+      for (int x : contraintesV.get(i))
+        s+=x;
+      if (s+contraintesV.get(i).size()-1==tg) { // On a trouvé une colonne triviale
+        boolean[] truc = new boolean[tg]; // On calcule la rangée à tracer
+        int curseur = 0;
+        for (int x : contraintesV.get(i)) {
+          for (int j=0; j<x; j++) {
+            truc[curseur+j] = true;
+          }
+          if (curseur+x+1<tg)
+            truc[curseur+x+1] = false;
+          curseur+=x+1;
+        } // On la trace
+        for (int j=0; j<tg; j++) {
+          if (truc[j]) {
+            certains.get(j).set(i, Case.NOIR);
+          } else {
+            certains.get(j).set(i, Case.BLANC);
+          }
+        }
+      }
+    }
+    // Même chose pour les lignes
+    for (int i=0; i<tg; i++) { // Ligne par ligne
+      int s=0;
+      for (int x : contraintesH.get(i))
+        s+=x;
+      if (s+contraintesH.get(i).size()-1==tg) {
+        
+      }
+     boolean[] truc = new boolean[tg]; // On calcule la rangée à tracer
+      int curseur = 0;
+      for (int x : contraintesV.get(i)) {
+        for (int j=0; j<x; j++) {
+          truc[curseur+j] = true;
+        }
+        if (curseur+x+1<tg)
+          truc[curseur+x+1] = false;
+        curseur+=x+1;
+      } // On la trace TODO vérifier la cohérence
+      for (int j=0; j<tg; j++) {
+        if (truc[j]) {
+          certains.get(j).set(i, Case.NOIR);
+        } else {
+          certains.get(j).set(i, Case.BLANC);
+        }
+      }
+    }
+    printGrille(certains);
+    return null;
+  }
+}
+enum Case {
+  BLANC, NOIR, LIBRE;
+  boolean libre() {
+    return this==LIBRE;
+  }
+  boolean blanc() {
+    return this==BLANC;
   }
 }

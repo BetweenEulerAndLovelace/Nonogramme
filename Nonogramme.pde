@@ -1,5 +1,6 @@
 import java.util.LinkedList;
 color blanc = #FFFFFF;
+color gris = #AAAAAA;
 color noir = #000000;
 color vert = #00FF00;
 color vertFonce = #00AA00; 
@@ -7,7 +8,7 @@ int phase = 0; // 0 (taille de la grille), 1 (contraintes), 2 (réponse)
 final int largeurCase = 30;
 final int debutGrille = 240;
 int tg = 10;
-ArrayList<Bouton> boutons = new ArrayList<Bouton>();
+//ArrayList<Bouton> boutons = new ArrayList<Bouton>();
 Grille grille;
 
 void setup() {
@@ -15,7 +16,7 @@ void setup() {
   background(blanc);
   textAlign(CENTER, CENTER);
   grille = new Grille(tg);
-  BoutonRect tailleReglage = new BoutonRect(new PVector(debutGrille-largeurCase,debutGrille-largeurCase), new PVector(largeurCase, largeurCase), vertFonce, vert, "+") {
+  /*BoutonRect tailleReglage = new BoutonRect(new PVector(debutGrille-largeurCase,debutGrille-largeurCase), new PVector(largeurCase, largeurCase), vertFonce, vert, "+") {
     void appuyer() {
       boutons.clear();
       grille.initPhase1();
@@ -31,7 +32,7 @@ void setup() {
       }
     }
   };
-  boutons.add(tailleReglage);
+  boutons.add(tailleReglage);*/
   /*BoutonRect bTest = new BoutonRect(new PVector(400, 100), new PVector(40, 10), vertFonce, vert, "T"){
     void appuyer() {
       print("=");
@@ -46,7 +47,7 @@ void setup() {
   boutons.add(bTest);*/
 }
 
-void debutContraintes() {
+/*void debutContraintes() {
   boutons.clear();
   for (int i=0; i<tg; i++) {
     // Vertical
@@ -58,35 +59,52 @@ void debutContraintes() {
       void moletteBas() {}
     });
   }
-}
+}*/
 
 void draw() {
   background(blanc);
   grille.afficherGrille();
-  for (int i=0; i<boutons.size(); i++) {
+  /*for (int i=0; i<boutons.size(); i++) {
     boutons.get(i).afficher();
-  }
+  }*/
 }
 
 void mousePressed() {
-  for (int i=0; i<boutons.size(); i++) {
+  /*for (int i=0; i<boutons.size(); i++) {
     Bouton b = boutons.get(i);
     if (b.estSurvole())
       b.appuyer();
-  }
+  }*/
   grille.appuyer();
 }
 void mouseWheel(MouseEvent e) {
-  for (Bouton b : boutons) {
+  /*for (Bouton b : boutons) {
     if (b.estSurvole() && e.getCount()<0) {
       b.moletteHaut();
     } else if (b.estSurvole() && e.getCount()>0) {
       b.moletteBas();
     }
-  }
+  }*/
   if (e.getCount()<0) {
     grille.moletteHaut();
   } else {
     grille.moletteBas();
   }
+}
+void printGrille(ArrayList<ArrayList<Case>> grille) {
+  for (int i=0; i<tg; i++) {
+    for (int j=0; j<tg; j++) {
+      if (grille.get(i).get(j)==Case.BLANC) {
+        print("o");
+      } else if (grille.get(i).get(j)==Case.NOIR) {
+        print("X");
+      } else {
+        print(".");
+      }
+    }
+    println();
+  }
+}
+ArrayList<ArrayList<ArrayList<Case>>> resoudre(ArrayList<ArrayList<Case>> grille, ArrayList<LinkedList<Integer>> ctrV, ArrayList<LinkedList<Integer>> ctrH) {
+  return null;
 }
