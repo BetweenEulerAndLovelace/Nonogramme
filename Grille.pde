@@ -10,7 +10,6 @@ class Grille {
     void appuyer() {
       phase=1;
       initPhase1();
-      
     }
     void moletteHaut() {
       tg+=1;
@@ -42,24 +41,33 @@ class Grille {
       ajouterContrainteH.clear();
       reglerContraintesV.clear();
       reglerContraintesH.clear();
-      resoudreDirect();
+      ArrayList<ArrayList<ArrayList<Case>>> res = resoudreDirect();
+      for (ArrayList<ArrayList<Case>> aa : res) {
+        printGrille(aa);
+      }
     }
-    void moletteHaut() {}
-    void moletteBas() {}
+    void moletteHaut() {
+    }
+    void moletteBas() {
+    }
   };
   BoutonRect phase2avant = new BoutonRect(new PVector(debutGrille-2*largeurCase, debutGrille-largeurCase), new PVector(largeurCase, largeurCase), vertFonce, vert, "<") {
     void appuyer() {
       // TODO
     }
-    void moletteHaut() {}
-    void moletteBas() {}
+    void moletteHaut() {
+    }
+    void moletteBas() {
+    }
   };
   BoutonRect phase2apres = new BoutonRect(new PVector(debutGrille-largeurCase, debutGrille-largeurCase), new PVector(largeurCase, largeurCase), vertFonce, vert, ">") {
     void appuyer() {
       // TODO
     }
-    void moletteHaut() {}
-    void moletteBas() {}
+    void moletteHaut() {
+    }
+    void moletteBas() {
+    }
   };
   ArrayList<ArrayList<Case>> plateau;
   Grille(int n) {
@@ -221,17 +229,23 @@ class Grille {
         void appuyer() {
           ajouterContrainte(1, rang, true);
         }
-        void moletteHaut() {}
-        void moletteBas() {}
-      });
+        void moletteHaut() {
+        }
+        void moletteBas() {
+        }
+      }
+      );
       reglerContraintesV.add(new LinkedList<BoutonReglageContrainte>());
       ajouterContrainteH.add(new BoutonAjouterContrainte(new PVector(debutGrille-largeurCase, debutGrille+i*largeurCase), new PVector(largeurCase, largeurCase), i, false, vertFonce, vert, "+") {
         void appuyer() {
           ajouterContrainte(1, rang, false);
         }
-        void moletteHaut() {}
-        void moletteBas() {}
-      });
+        void moletteHaut() {
+        }
+        void moletteBas() {
+        }
+      }
+      );
       reglerContraintesH.add(new LinkedList<BoutonReglageContrainte>());
     }
   }
@@ -247,14 +261,16 @@ class Grille {
         for (BoutonReglageContrainte b : reglerContraintesV.get(rang))
           b.decalerHaut(largeurCase);
         reglerContraintesV.get(rang).add(new BoutonReglageContrainte(new PVector(debutGrille+rang*largeurCase, debutGrille-largeurCase*2), new PVector(largeurCase, largeurCase), rang, contraintesV.get(rang).size(), true) {
-          void appuyer() {}
+          void appuyer() {
+          }
           void moletteHaut() {
             incrContrainte(rang, sousRang, true);
           }
           void moletteBas() {
             decrContrainte(rang, sousRang, true);
           }
-        });
+        }
+        );
         contraintesV.get(rang).add(x);
       }
     } else {
@@ -262,14 +278,16 @@ class Grille {
         for (BoutonReglageContrainte b : reglerContraintesH.get(rang))
           b.decalerGauche(largeurCase);
         reglerContraintesH.get(rang).add(new BoutonReglageContrainte(new PVector(debutGrille-2*largeurCase, debutGrille+rang*largeurCase), new PVector(largeurCase, largeurCase), rang, contraintesH.get(rang).size(), false) {
-          void appuyer() {}
+          void appuyer() {
+          }
           void moletteHaut() {
             incrContrainte(rang, sousRang, false);
           }
           void moletteBas() {
             decrContrainte(rang, sousRang, false);
           }
-        });
+        }
+        );
         contraintesH.get(rang).add(x);
       }
     }
@@ -324,10 +342,11 @@ class Grille {
       }
     }
   }
-  
+
   // Résolution
   ArrayList<ArrayList<ArrayList<Case>>> resoudreDirect() {
     ArrayList<ArrayList<ArrayList<Case>>> res = new ArrayList<ArrayList<ArrayList<Case>>>();
+    // Init certains
     ArrayList<ArrayList<Case>> certains = new ArrayList<ArrayList<Case>>(tg);
     for (int i=0; i<tg; i++) {
       ArrayList<Case> l = new ArrayList<Case>(tg);
@@ -335,23 +354,16 @@ class Grille {
         l.add(Case.LIBRE);
       certains.add(l);
     }
+    // On cherche des colonnes et des lignes triviales
     for (int i=0; i<tg; i++) { // Colonne par colonne
       int s=0;
       for (int x : contraintesV.get(i))
         s+=x;
       if (s+contraintesV.get(i).size()-1==tg) { // On a trouvé une colonne triviale
-        boolean[] truc = new boolean[tg]; // On calcule la rangée à tracer
-        int curseur = 0;
-        for (int x : contraintesV.get(i)) {
-          for (int j=0; j<x; j++) {
-            truc[curseur+j] = true;
-          }
-          if (curseur+x+1<tg)
-            truc[curseur+x+1] = false;
-          curseur+=x+1;
-        } // On la trace
+        ArrayList<Boolean> truc = solutionTriviale(contraintesV.get(i), tg);
+        // On la trace
         for (int j=0; j<tg; j++) {
-          if (truc[j]) {
+          if (truc.get(j)) {
             certains.get(j).set(i, Case.NOIR);
           } else {
             certains.get(j).set(i, Case.BLANC);
@@ -365,28 +377,23 @@ class Grille {
       for (int x : contraintesH.get(i))
         s+=x;
       if (s+contraintesH.get(i).size()-1==tg) {
-        
-      }
-     boolean[] truc = new boolean[tg]; // On calcule la rangée à tracer
-      int curseur = 0;
-      for (int x : contraintesV.get(i)) {
-        for (int j=0; j<x; j++) {
-          truc[curseur+j] = true;
-        }
-        if (curseur+x+1<tg)
-          truc[curseur+x+1] = false;
-        curseur+=x+1;
-      } // On la trace TODO vérifier la cohérence
-      for (int j=0; j<tg; j++) {
-        if (truc[j]) {
-          certains.get(j).set(i, Case.NOIR);
-        } else {
-          certains.get(j).set(i, Case.BLANC);
+        ArrayList<Boolean> truc = solutionTriviale(contraintesH.get(i), tg); // On calcule la rangée à tracer
+        // On la trace
+        for (int j=0; j<tg; j++) {
+          if (truc.get(j)) {
+            if (certains.get(i).get(j).blanc()) // Contradiction
+              return res;
+            certains.get(i).set(j, Case.NOIR);
+          } else {
+            if (certains.get(i).get(j).noir()) // Contradiction
+              return res;
+            certains.get(i).set(j, Case.BLANC);
+          }
         }
       }
     }
-    printGrille(certains);
-    return null;
+    // On a établi quelques certitudes, on passe en mode bourrin
+    return resoudre(certains, contraintesV, contraintesH);
   }
 }
 enum Case {
@@ -396,5 +403,8 @@ enum Case {
   }
   boolean blanc() {
     return this==BLANC;
+  }
+  boolean noir() {
+    return this==NOIR;
   }
 }
