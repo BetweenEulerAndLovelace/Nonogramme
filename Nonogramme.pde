@@ -16,6 +16,26 @@ void setup() {
   background(blanc);
   textAlign(CENTER, CENTER);
   grille = new Grille(tg);
+  LinkedList<Integer> contraintes = new LinkedList<Integer>();
+  contraintes.add(1); contraintes.add(2);
+  ArrayList<ArrayList<Boolean>> res = getPossibilitesSsRecurrence(contraintes, 10);
+  println(res.size());
+  for (int i=0; i<res.size(); i++) {
+    for (int j=0; j<res.get(i).size(); j++) {
+      if (res.get(i).get(j)) {
+        print("X");
+      } else {
+        print("o");
+      }
+    }
+    println();
+  }
+  /*ArrayList<ArrayList<Integer>> aa = repartBlancs(5, 3);
+  for (ArrayList<Integer> a : aa) {
+    for (int x : a)
+      print(x);
+    println();
+  }*/
   /*BoutonRect tailleReglage = new BoutonRect(new PVector(debutGrille-largeurCase,debutGrille-largeurCase), new PVector(largeurCase, largeurCase), vertFonce, vert, "+") {
     void appuyer() {
       boutons.clear();
@@ -61,13 +81,10 @@ void setup() {
   }
 }*/
 
-void draw() {
+/*void draw() {
   background(blanc);
   grille.afficherGrille();
-  /*for (int i=0; i<boutons.size(); i++) {
-    boutons.get(i).afficher();
-  }*/
-}
+}*/
 
 void mousePressed() {
   /*for (int i=0; i<boutons.size(); i++) {
@@ -117,17 +134,20 @@ ArrayList<ArrayList<ArrayList<Case>>> resoudre(ArrayList<ArrayList<Case>> grille
       }
     }
   }
-  // On compte les cases apparentes, on fait une boucle sur i<<n, on vérifie les grilles complètes que ça donne, on garde les cohérentes
-  for (int i=0; i<1<<casesLibresLignes.size(); i++) {
-    ArrayList<ArrayList<Case>> test = (ArrayList<ArrayList<Case>>)grille.clone();
-    for (int j=0; j<casesLibresLignes.size(); j++) {
-      int ligne = casesLibresLignes.get(j);
-      int colonne = casesLibresColonnes.get(j);
-      test.get(ligne).set(colonne, ((i>>j)%2==0)?Case.NOIR:Case.BLANC);
-      printGrille(test);
-      println();
-      if (testCoherence(test, ctrV, ctrH)) {
-        res.add(test);
+  // Pour chaque ligne, on liste les solutions cohérentes. Puis on vérifie de façon bourrin si c'est cohérent avec les colonnes
+  ArrayList<ArrayList<ArrayList<Boolean>>> solutions = new ArrayList<ArrayList<ArrayList<Boolean>>>(); // Pour chaque ligne, toutes les solutions respectant les contraintes
+  for (int i=0; i<tg; i++) {
+    solutions.add(getPossibilitesSsRecurrence(ctrH.get(i), tg));}
+  for (int i=0; i<2<<tg; i++) { // Tous les agencements de lignes
+    ArrayList<ArrayList<Case>> grilleTest = new ArrayList<ArrayList<Case>>(grille);
+    boolean valide = true;
+    for (int j=0; j<tg; j++) { // j désigne la ligne
+      solutions.get(j).get
+      for (int k=0; k<tg; k++) { // k désigne la colonne
+        Case cc = grilleTest.get(j).get(k);
+        if (cc.libre()) {
+          
+        }
       }
     }
   }
@@ -183,24 +203,39 @@ boolean testCoherence(ArrayList<ArrayList<Case>> grille, ArrayList<LinkedList<In
   // Flying colours
   return true;
 }
-ArrayList<ArrayList<Boolean>> getPossibilites(LinkedList<Integer> contraintes, int longueur) {
+ArrayList<ArrayList<Boolean>> getPossibilitesSsRecurrence(LinkedList<Integer> contraintes, int longueur) { // Renvoie toutes les façons de faire une ligne de taille l en respectant les contraintes
   ArrayList<ArrayList<Boolean>> res = new ArrayList<ArrayList<Boolean>>();
   int somme = 0;
   for (int x : contraintes)
     somme+=x;
-  if (somme==longueur) {
-    // On construit la seule possibilité
+  if (longueur < contraintes.size()+somme-1) {
+    return res;
+  } else if(longueur == contraintes.size()+somme-1) {
     res.add(solutionTriviale(contraintes, longueur));
-  } else if (somme<longueur) {
-    // On diminue la longueur
-    ArrayList<ArrayList<Boolean>> pos = getPossibilites(contraintes, longueur-1);
-    for (ArrayList<Boolean> p : pos) {
-      p.add(0, false);
-      res.add(p);
+  } else {
+    int blancsDispos = longueur-somme-contraintes.size()+1;
+    ArrayList<ArrayList<Integer>> agencements = repartBlancs(blancsDispos, contraintes.size()+1);
+    for (ArrayList<Integer> a : agencements) {
+      for (int x : a) {
+        print(x, "");
+      }
+      println();
     }
-    // On ajoute une contrainte au début
-    LinkedList<Integer> cAmputee = new LinkedList<Integer>(contraintes); int l = cAmputee.removeFirst();
-    res.addAll(getPossibilites(cAmputee, longueur-l));
+    for (int i=0; i<agencements.size(); i++) { // Chaque possibilité
+      ArrayList<Boolean> ajout = new ArrayList<Boolean>();
+      ArrayList<Integer> ag = agencements.get(i);
+      for (int j=0; j<ag.size(); j++) { // Trous de blancs entre les noirs
+        for (int k=0; k<ag.get(j); k++) // Pour chaque blanc...
+          ajout.add(false); // On met un blanc
+        if (j>0 && j<ag.size()-1)
+          ajout.add(false);
+        if (j<ag.size()-1) {
+          for (int k=0; k<contraintes.get(j); k++)
+            ajout.add(true);
+        }
+      }
+      res.add(ajout);
+    }
   }
   return res;
 }
@@ -209,11 +244,28 @@ ArrayList<Boolean> solutionTriviale(LinkedList<Integer> contraintes, int longueu
   int curseur = 0;
   for (int x : contraintes) {
     for (int j=0; j<x; j++) {
-      truc.set(curseur+j, true);
+      truc.add(true);
     }
-    if (curseur+x+1<tg)
-      truc.set(curseur+x+1, false);
+    if (curseur+x+1<longueur)
+      truc.add(false);
     curseur+=x+1;
   }
   return truc;
+}
+ArrayList<ArrayList<Integer>> repartBlancs(int nbBlancs, int empls) {
+  ArrayList<ArrayList<Integer>> res = new ArrayList<ArrayList<Integer>>();
+  if (empls==0) {
+  } else if (empls==1) {
+    ArrayList<Integer> a = new ArrayList<Integer>();
+    a.add(nbBlancs);
+    res.add(a);
+  } else {
+    for (int i=0; i<nbBlancs+1; i++) {
+      ArrayList<ArrayList<Integer>> aa = repartBlancs(nbBlancs-i, empls-1);
+      for (ArrayList<Integer> a : aa) {
+        a.add(i);}
+      res.addAll(aa);
+    }
+  }
+  return res;
 }
